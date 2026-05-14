@@ -1,0 +1,21 @@
+{
+  "UNKNOWN": [
+    "Re-run the tool with verbose/debug flags to capture full output.",
+    "Verify the tool is installed and accessible in the current SIFT environment.",
+    "Confirm the target artefact path exists and is readable (check permissions).",
+    "Check whether the image or volume was correctly mounted before invocation."
+  ],
+  "SUSPECTED": [
+    "Review the full stderr for the root cause of partial output.",
+    "Cross-validate this finding with a second tool targeting the same artefact.",
+    "Determine if the artefact is corrupt, encrypted, or unsupported by this tool version.",
+    "Check tool version compatibility with the evidence image format."
+  ],
+  "INFERRED": [
+    "Correlate hashes / offsets with known-good reference databases (e.g. NSRL).",
+    "Chain this output with timeline analysis to establish causal ordering.",
+    "Acquire additional artefacts (memory dump, network pcap) to confirm interpretation.",
+    "Run a complementary tool to corroborate this interpretation."
+  ],
+  "CONFIRMED": []
+}
