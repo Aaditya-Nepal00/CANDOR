@@ -43,7 +43,7 @@ _MAX_RETRIES = 3
 
 # Tool definitions – {case_dir} is substituted at runtime; no hardcoded paths.
 _TOOLS: list[tuple[str, list[str]]] = [
-    ("amcache",      ["amcache.py", "-f", "{case_dir}"]),
+    ("amcache",      ["amcache.py", "-t", "{case_dir}/Amcache.hve"]),
     ("analyzemft",   ["analyzemft", "-f", "{case_dir}/$MFT", "-o", "csv"]),
     ("log2timeline", ["log2timeline.py", "--storage-file",
                       "{case_dir}/timeline.plaso", "{case_dir}"]),
@@ -51,14 +51,13 @@ _TOOLS: list[tuple[str, list[str]]] = [
 
 _RETRY_VARIANTS: dict[str, list[list[str]]] = {
     "amcache": [
-        ["amcache.py", "-f", "{case_dir}", "--verbose"],
-        ["amcache.py", "-f", "{case_dir}", "--all"],
-        ["amcache.py", "-f", "{case_dir}", "--debug"],
+        ["amcache.py", "-t", "{case_dir}/Amcache.hve", "-v"],
+        ["amcache.py", "-t", "{case_dir}/Amcache.hve", "--csv"],
+        ["amcache.py", "-t", "{case_dir}/Amcache.hve", "--all"],
     ],
     "analyzemft": [
-        ["analyzemft", "-f", "{case_dir}/$MFT", "-o", "csv", "--debug"],
         ["analyzemft", "-f", "{case_dir}/$MFT", "-o", "body"],
-        ["analyzemft", "-f", "{case_dir}/$MFT"],
+        ["analyzemft", "-f", "{case_dir}/$MFT", "-o", "csv", "-s"],
     ],
     "log2timeline": [
         ["log2timeline.py", "--logfile", "{case_dir}/l2t.log",
