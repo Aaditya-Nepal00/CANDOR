@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>CANDOR -- Demo IR Case</title><style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Courier New',Courier,monospace;background:#1a1a2e;color:#c9d1d9;
+     line-height:1.65;padding:2.5rem;max-width:980px;margin:0 auto}
+header{padding-bottom:.9rem;margin-bottom:2rem;border-bottom:1px solid #252540}
+header h1{font-size:1rem;color:#e2e8f0;letter-spacing:.2em;text-transform:uppercase}
+header .meta{font-size:.78rem;color:#5b6478;margin-top:.25rem}
+.summary{width:100%;border-collapse:collapse;margin-bottom:2rem}
+.summary th{text-align:left;color:#5b6478;font-weight:400;padding:.35rem .75rem;
+            border-bottom:1px solid #252540;text-transform:uppercase;
+            letter-spacing:.1em;font-size:.7rem}
+.summary td{padding:.35rem .75rem;font-size:.82rem;color:#c9d1d9}
+.summary tr+tr td{border-top:1px solid #1e1e32}
+.cards{display:flex;flex-direction:column;gap:.75rem}
+.card{background:#12122a;border:1px solid #252540;border-radius:3px;padding:.9rem 1.1rem}
+.ch{display:flex;align-items:center;gap:.55rem;margin-bottom:.55rem}
+.ch h2{font-size:.88rem;font-weight:600;color:#dde3ed}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.badge{border-radius:2px;padding:.12rem .45rem;font-size:.68rem;font-weight:700;
+       letter-spacing:.06em;text-transform:uppercase;color:#fff}
+.ts{font-size:.7rem;color:#5b6478;margin-left:auto}
+.sec{margin-top:.45rem}
+.sec .lbl{font-size:.63rem;text-transform:uppercase;letter-spacing:.12em;
+          color:#5b6478;margin-bottom:.18rem}
+.sec p{font-size:.8rem;color:#9aa5b8}
+.de{margin-top:2.5rem;padding-top:1.4rem;border-top:1px solid #252540}
+.de h2{font-size:.78rem;color:#9aa5b8;margin-bottom:.75rem;text-transform:uppercase;
+       letter-spacing:.15em;font-weight:400}
+.de ul{list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:.3rem}
+.de li{font-size:.78rem;color:#7a8699}
+.empty{color:#5b6478;font-style:italic;font-size:.78rem}
+footer{margin-top:2.5rem;font-size:.68rem;color:#3a3f52}
+</style></head><body><header><h1>CANDOR</h1><div class="meta">Case: Demo IR Case | 2026-05-15 04:25:29 UTC | 3 finding(s)</div></header><table class="summary"><thead><tr><th>Class</th><th>Count</th></tr></thead><tbody><tr><td style="color:#27ae60">CONFIRMED</td><td>1</td></tr><tr><td style="color:#d4ac0d">INFERRED</td><td>1</td></tr><tr><td style="color:#ca6f1e">SUSPECTED</td><td>1</td></tr><tr><td style="color:#922b21">UNKNOWN</td><td>0</td></tr></tbody></table><div class="cards"><div class="card"><div class="ch"><span class="dot" style="background:#27ae60;"></span><h2>volatility3</h2><span class="badge" style="background:#27ae60;">CONFIRMED</span><span class="ts">2026-05-14T08:00:00Z</span></div><div class="sec"><div class="lbl">Evidence</div><p>PID 4 System, PID 88 smss.exe – clean process tree.</p></div><div class="sec"><div class="lbl">Reasoning</div><p>Tool ran with no errors; output is directly readable.</p></div></div><div class="card"><div class="ch"><span class="dot" style="background:#d4ac0d;"></span><h2>log2timeline</h2><span class="badge" style="background:#d4ac0d;">INFERRED</span><span class="ts">2026-05-14T08:05:00Z</span></div><div class="sec"><div class="lbl">Evidence</div><p>SHA256: a3f1... entropy: 7.92 offset: 0x1A4C</p></div><div class="sec"><div class="lbl">Reasoning</div><p>Output contains forensic indicator 'entropy'; requires correlation.</p></div></div><div class="card"><div class="ch"><span class="dot" style="background:#ca6f1e;"></span><h2>fls</h2><span class="badge" style="background:#ca6f1e;">SUSPECTED</span><span class="ts">2026-05-14T08:10:00Z</span></div><div class="sec"><div class="lbl">Evidence</div><p>r/r 12345: suspicious.exe</p></div><div class="sec"><div class="lbl">Reasoning</div><p>Output returned alongside error; partial or degraded run suspected.</p></div></div></div><div class="de"><h2>Dead Ends / Missing Evidence</h2><ul><li>Correlate PIDs with network connections to identify C2 beacons.</li><li>Cross-reference parent PIDs against baseline image.</li><li>Entropy alone does not confirm encryption – acquire packed sample.</li><li>Inode table truncated – attempt carving with photorec.</li><li>Verify filesystem journal for overwritten entries.</li></ul></div><footer>CANDOR Forensic Incident Response Agent</footer></body></html>
