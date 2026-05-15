@@ -1,0 +1,143 @@
+{
+  "generated": "2026-05-15T05:46:07.773896+00:00",
+  "entry_count": 5,
+  "entries": [
+    {
+      "tool": "amcache",
+      "output": "",
+      "error": "C:\\Users\\aadit\\AppData\\Local\\Programs\\Python\\Python311\\python.exe: No module named amcache\n",
+      "timestamp": "2026-05-15T05:46:07.620612+00:00",
+      "cmd": [
+        "python",
+        "-m",
+        "amcache",
+        "C:\\Users\\aadit\\OneDrive\\Desktop\\Candor\\Candor-sift"
+      ],
+      "attempt": 1,
+      "returncode": 1,
+      "finding": {
+        "confidence_class": "UNKNOWN",
+        "tool_name": "amcache",
+        "timestamp": "2026-05-15T05:46:07.620612+00:00",
+        "evidence_summary": "C:\\Users\\aadit\\AppData\\Local\\Programs\\Python\\Python311\\python.exe: No module named amcache",
+        "reasoning": "Tool 'amcache' produced no usable output. Error snippet: 'C:\\\\Users\\\\aadit\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe: No module named amcache'",
+        "dead_ends": [
+          "Re-run the tool with verbose/debug flags to capture full output.",
+          "Verify the tool is installed and accessible in the current SIFT environment.",
+          "Confirm the target artefact path exists and is readable (check permissions).",
+          "Check whether the image or volume was correctly mounted before invocation."
+        ]
+      }
+    },
+    {
+      "tool": "amcache",
+      "output": "",
+      "error": "C:\\Users\\aadit\\AppData\\Local\\Programs\\Python\\Python311\\python.exe: No module named amcache\n",
+      "timestamp": "2026-05-15T05:46:07.660900+00:00",
+      "cmd": [
+        "python",
+        "-m",
+        "amcache",
+        "--verbose",
+        "C:\\Users\\aadit\\OneDrive\\Desktop\\Candor\\Candor-sift"
+      ],
+      "attempt": 2,
+      "returncode": 1,
+      "finding": {
+        "confidence_class": "UNKNOWN",
+        "tool_name": "amcache",
+        "timestamp": "2026-05-15T05:46:07.660900+00:00",
+        "evidence_summary": "C:\\Users\\aadit\\AppData\\Local\\Programs\\Python\\Python311\\python.exe: No module named amcache",
+        "reasoning": "Tool 'amcache' produced no usable output. Error snippet: 'C:\\\\Users\\\\aadit\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe: No module named amcache'",
+        "dead_ends": [
+          "Re-run the tool with verbose/debug flags to capture full output.",
+          "Verify the tool is installed and accessible in the current SIFT environment.",
+          "Confirm the target artefact path exists and is readable (check permissions).",
+          "Check whether the image or volume was correctly mounted before invocation."
+        ]
+      }
+    },
+    {
+      "tool": "amcache",
+      "output": "",
+      "error": "C:\\Users\\aadit\\AppData\\Local\\Programs\\Python\\Python311\\python.exe: No module named amcache\n",
+      "timestamp": "2026-05-15T05:46:07.697633+00:00",
+      "cmd": [
+        "python",
+        "-m",
+        "amcache",
+        "--all",
+        "C:\\Users\\aadit\\OneDrive\\Desktop\\Candor\\Candor-sift"
+      ],
+      "attempt": 3,
+      "returncode": 1,
+      "finding": {
+        "confidence_class": "UNKNOWN",
+        "tool_name": "amcache",
+        "timestamp": "2026-05-15T05:46:07.697633+00:00",
+        "evidence_summary": "C:\\Users\\aadit\\AppData\\Local\\Programs\\Python\\Python311\\python.exe: No module named amcache",
+        "reasoning": "Tool 'amcache' produced no usable output. Error snippet: 'C:\\\\Users\\\\aadit\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe: No module named amcache'",
+        "dead_ends": [
+          "Re-run the tool with verbose/debug flags to capture full output.",
+          "Verify the tool is installed and accessible in the current SIFT environment.",
+          "Confirm the target artefact path exists and is readable (check permissions).",
+          "Check whether the image or volume was correctly mounted before invocation."
+        ]
+      }
+    },
+    {
+      "tool": "amcache",
+      "output": "",
+      "error": "C:\\Users\\aadit\\AppData\\Local\\Programs\\Python\\Python311\\python.exe: No module named amcache\n",
+      "timestamp": "2026-05-15T05:46:07.732555+00:00",
+      "cmd": [
+        "python",
+        "-m",
+        "amcache",
+        "--debug",
+        "C:\\Users\\aadit\\OneDrive\\Desktop\\Candor\\Candor-sift"
+      ],
+      "attempt": 4,
+      "returncode": 1,
+      "finding": {
+        "confidence_class": "UNKNOWN",
+        "tool_name": "amcache",
+        "timestamp": "2026-05-15T05:46:07.732555+00:00",
+        "evidence_summary": "C:\\Users\\aadit\\AppData\\Local\\Programs\\Python\\Python311\\python.exe: No module named amcache",
+        "reasoning": "Tool 'amcache' produced no usable output. Error snippet: 'C:\\\\Users\\\\aadit\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe: No module named amcache'",
+        "dead_ends": [
+          "Re-run the tool with verbose/debug flags to capture full output.",
+          "Verify the tool is installed and accessible in the current SIFT environment.",
+          "Confirm the target artefact path exists and is readable (check permissions).",
+          "Check whether the image or volume was correctly mounted before invocation."
+        ]
+      }
+    },
+    {
+      "tool": "analyzemft",
+      "output": "",
+      "error": "Tool not found on PATH: 'analyzemft'",
+      "timestamp": "2026-05-15T05:46:07.770871+00:00",
+      "cmd": [
+        "analyzemft",
+        "--output=csv",
+        "C:\\Users\\aadit\\OneDrive\\Desktop\\Candor\\Candor-sift/$MFT"
+      ],
+      "attempt": 1,
+      "returncode": -1,
+      "finding": {
+        "confidence_class": "UNKNOWN",
+        "tool_name": "analyzemft",
+        "timestamp": "2026-05-15T05:46:07.770871+00:00",
+        "evidence_summary": "Tool not found on PATH: 'analyzemft'",
+        "reasoning": "Tool 'analyzemft' produced no usable output. Error snippet: \"Tool not found on PATH: 'analyzemft'\"",
+        "dead_ends": [
+          "Re-run the tool with verbose/debug flags to capture full output.",
+          "Verify the tool is installed and accessible in the current SIFT environment.",
+          "Confirm the target artefact path exists and is readable (check permissions).",
+          "Check whether the image or volume was correctly mounted before invocation."
+        ]
+      }
+    }
+  ]
+}
