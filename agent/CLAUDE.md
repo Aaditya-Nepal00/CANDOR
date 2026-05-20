@@ -19,11 +19,18 @@ Execute these steps in exact order. Do not skip steps. Do not reorder.
 | 5 | `get_timeline()` | Generate a full Plaso/log2timeline super-timeline ONLY if steps 1–4 surfaced anomalies |
 | 6 | `tag_finding()` | For EVERY finding from steps 1–5, classify confidence (see §4) |
 | 7 | Cross-correlate | Compare all sources: Does Amcache match Prefetch? Does MFT align with EVTX? |
+| 7a | `correlate_findings()` | Call with ALL tagged findings BEFORE writing any narrative — deterministic rule checks |
 | 8 | `generate_candor_report()` | Produce the final structured report with all findings, dead ends, and executive summary |
 
 **Step 5 gate**: Only call `get_timeline()` if at least one finding from steps 1–4 is SUSPECTED or shows a temporal anomaly. A full timeline is expensive — don't run it on clean cases.
 
 **Step 7 is manual analysis**: You do this yourself. Compare timestamps, filenames, hashes, and execution paths across all tool outputs. Document every match and every contradiction.
+
+**Step 7a rules**: Call `correlate_findings()` with the full list of tagged findings from Step 6. The correlator runs three deterministic checks (timestamp proximity, corroboration, known-bad patterns) and returns a `CorrelationReport`. Use the results as follows:
+- **RULE_CONFIRMED** pairs → use as the basis for any CONFIRMED cross-source conclusions in the final report
+- **RULE_SUSPECTED** pairs → flag as INFERRED in the final report; do NOT present these as confirmed facts
+- **INSUFFICIENT_DATA** → note in the report that cross-correlation could not be performed due to limited findings
+- All `suspicious_patterns` entries must appear in the report's anomaly section, regardless of overall confidence
 
 ## 3. Self-Correction Rules
 

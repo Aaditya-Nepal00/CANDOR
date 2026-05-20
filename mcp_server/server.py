@@ -42,10 +42,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 try:
     from agent.tagger import EpistemicTagger
     from agent.reporter import generate_report
+    from agent.correlator import correlate as correlate_findings_impl
 except ImportError as exc:
     print(f"WARNING: agent modules unavailable ({exc})", file=sys.stderr)
     EpistemicTagger = None  # type: ignore[assignment,misc]
     generate_report = None  # type: ignore[assignment]
+    correlate_findings_impl = None  # type: ignore[assignment]
 
 # ---------------------------------------------------------------------------
 # Server instance
@@ -263,6 +265,38 @@ def generate_candor_report(
             "error": str(exc),
             "timestamp": _ts(),
         })
+
+# ---------------------------------------------------------------------------
+# Tool 8 – Cross-Correlation Engine
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def correlate_findings(findings: list[dict[str, Any]]) -> dict[str, Any]:
+    """Run rule-based cross-correlation on a list of tagged findings.
+
+    Calls ``correlate()`` from ``agent/correlator.py`` and returns a
+    CorrelationReport dict containing confirmed pairs, contradictions,
+    suspicious patterns, and an overall confidence rating.
+
+    Must be called AFTER all findings have been tagged via ``tag_finding()``
+    and BEFORE writing any narrative or generating the final report.
+    """
+    if correlate_findings_impl is None:
+        return {
+            "tool": "correlate_findings",
+            "output": None,
+            "error": "agent.correlator module is not available",
+            "timestamp": _ts(),
+        }
+    try:
+        return correlate_findings_impl(findings)
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "tool": "correlate_findings",
+            "output": None,
+            "error": str(exc),
+            "timestamp": _ts(),
+        }
 
 # ---------------------------------------------------------------------------
 # Entrypoint
