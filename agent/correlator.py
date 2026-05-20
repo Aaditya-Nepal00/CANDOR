@@ -16,7 +16,7 @@ from typing import Any
 CONFIG: dict[str, Any] = {
     "proximity_confirm_seconds": 300,       # 5 min
     "proximity_contradict_seconds": 3600,   # 60 min
-    "simultaneity_threshold_seconds": 2,
+    "simultaneity_seconds": 2,
     "artifact_type_map": {
         "amcache": "execution", "prefetch": "execution",
         "analyzemft": "filesystem", "evtx": "event_log",
@@ -168,7 +168,7 @@ def _rule_known_bad(findings: list[dict]) -> list[dict]:
                 "message": "Timeline gap detected — possible log clearing",
             })
     # 3c – Suspicious simultaneity across different artifact types
-    sim = CONFIG["simultaneity_threshold_seconds"]
+    sim = CONFIG["simultaneity_seconds"]
     for i, a in enumerate(findings):
         ts_a = _parse_ts(a.get("timestamp", ""))
         if not ts_a:
@@ -228,21 +228,26 @@ def correlate(findings: list[dict]) -> dict[str, Any]:
     Returns
     -------
     dict  –  CorrelationReport with keys: confirmed_pairs, contradictions,
-             suspicious_patterns, correlation_confidence, summary.
+             suspicious_patterns, correlation_confidence, summary, dead_end.
     """
+    _dead_end_msg = ("Fewer than 2 tool sources returned usable findings — "
+                     "acquire additional artifacts before drawing cross-source conclusions.")
     if not findings:
         return {
             "confirmed_pairs": [], "contradictions": [],
             "suspicious_patterns": [],
             "correlation_confidence": "INSUFFICIENT_DATA",
             "summary": "No findings provided for correlation.",
+            "dead_end": _dead_end_msg,
         }
     confirmed, contradictions = _rule_timestamp_proximity(findings)
     suspicious = _rule_corroboration(findings) + _rule_known_bad(findings)
+    confidence = _overall_confidence(confirmed, contradictions, suspicious)
     return {
         "confirmed_pairs": confirmed,
         "contradictions": contradictions,
         "suspicious_patterns": suspicious,
-        "correlation_confidence": _overall_confidence(confirmed, contradictions, suspicious),
+        "correlation_confidence": confidence,
         "summary": _build_summary(confirmed, contradictions, suspicious),
+        "dead_end": _dead_end_msg if confidence == "INSUFFICIENT_DATA" else "",
     }
