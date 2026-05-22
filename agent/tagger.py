@@ -19,6 +19,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agent import validators
+
 # ---------------------------------------------------------------------------
 # Load dead-end advisories from config
 # ---------------------------------------------------------------------------
@@ -101,6 +103,13 @@ class EpistemicTagger:
         ts    = self._normalise_ts(tool_result["timestamp"])
 
         cls, reason = self._classify(tool, out, err)
+
+        # Run schema check BEFORE confidence tagging ladder / resolving the final confidence class
+        val_res = validators.validate(tool, out)
+        if not val_res["valid"] and cls == "CONFIRMED":
+            cls = val_res["suggested_confidence"]
+            reason = f"Tool '{tool}' output passed heuristic checks, but schema validation failed: {val_res['reasoning']}"
+
         summary = (out or err)[:_SUMMARY_MAX] + ("…" if len(out or err) > _SUMMARY_MAX else "")
 
         return Finding(

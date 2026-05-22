@@ -13,6 +13,7 @@ Transport : stdio
 
 from __future__ import annotations
 
+import concurrent.futures
 import hashlib
 import json
 import os
@@ -43,11 +44,13 @@ try:
     from agent.tagger import EpistemicTagger
     from agent.reporter import generate_report
     from agent.correlator import correlate as correlate_findings_impl
+    from agent.validators import validate as validate_output_impl
 except ImportError as exc:
     print(f"WARNING: agent modules unavailable ({exc})", file=sys.stderr)
     EpistemicTagger = None  # type: ignore[assignment,misc]
     generate_report = None  # type: ignore[assignment]
     correlate_findings_impl = None  # type: ignore[assignment]
+    validate_output_impl = None  # type: ignore[assignment]
 
 # ---------------------------------------------------------------------------
 # Server instance
@@ -77,6 +80,28 @@ def _sha256(filepath: str) -> str | None:
         return h.hexdigest()
     except OSError:
         return None
+
+
+def _hash_directory(dirpath: str, pattern: str = "*.pf") -> str | None:
+    """Composite SHA-256 over all files matching *pattern* inside *dirpath*.
+
+    Iterates files in sorted order for determinism.  Returns None if the
+    directory does not exist or contains no matching files.
+    """
+    d = Path(dirpath)
+    if not d.is_dir():
+        return None
+    files = sorted(f for f in d.glob(pattern) if f.is_file())
+    if not files:
+        return None
+    outer = hashlib.sha256()
+    any_hashed = False
+    for f in files:
+        h = _sha256(str(f))
+        if h:
+            outer.update(f"{f.relative_to(d)}:{h}\n".encode())
+            any_hashed = True
+    return outer.hexdigest() if any_hashed else None
 
 
 def _ts() -> str:
@@ -164,7 +189,24 @@ def get_timeline(case_dir: str) -> dict[str, Any]:
     """
     storage = os.path.join(case_dir, "timeline.plaso")
     cmd = ["log2timeline.py", "--storage-file", storage, case_dir]
-    return _run(cmd, "log2timeline")
+
+    def _timed_hash() -> tuple[str | None, str | None]:
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                return ex.submit(_hash_directory, case_dir, "**/*").result(timeout=30), None
+        except concurrent.futures.TimeoutError:
+            return None, "Directory hash timed out after 30 s; integrity verification skipped."
+
+    hash_before, hash_note = _timed_hash()
+    result = _run(cmd, "log2timeline")
+    hash_after, note2 = _timed_hash()
+
+    result["hash_before"] = hash_before
+    result["hash_after"] = hash_after
+    if hash_note or note2:
+        note = hash_note or note2
+        result["error"] = f"{result['error']}; {note}" if result.get("error") else note
+    return result
 
 # ---------------------------------------------------------------------------
 # Tool 4 – Prefetch
@@ -179,7 +221,11 @@ def get_prefetch(case_dir: str) -> dict[str, Any]:
     """
     prefetch_dir = os.path.join(case_dir, "Windows", "Prefetch")
     cmd = ["PECmd.py", "-d", prefetch_dir]
-    return _run(cmd, "prefetch", evidence_file=prefetch_dir)
+    hash_before = _hash_directory(prefetch_dir)
+    result = _run(cmd, "prefetch")
+    result["hash_before"] = hash_before
+    result["hash_after"] = _hash_directory(prefetch_dir)
+    return result
 
 # ---------------------------------------------------------------------------
 # Tool 5 – Windows Event Logs (EVTX)
@@ -296,6 +342,36 @@ def correlate_findings(findings: list[dict[str, Any]]) -> dict[str, Any]:
             "output": None,
             "error": str(exc),
             "timestamp": _ts(),
+        }
+
+
+# ---------------------------------------------------------------------------
+# Tool 9 – Output Validator
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def validate_output(tool_name: str, output: str) -> dict[str, Any]:
+    """Validate a forensic tool's output against its expected schema.
+
+    Calls ``validate()`` from ``agent/validators.py`` and returns
+    the ValidationResult dict containing validity, failed checks,
+    suggested confidence, and reasoning.
+    """
+    if validate_output_impl is None:
+        return {
+            "valid": False,
+            "failed_checks": ["agent.validators module is not available"],
+            "suggested_confidence": "UNKNOWN",
+            "reasoning": "agent.validators module is not available.",
+        }
+    try:
+        return validate_output_impl(tool_name, output)
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "valid": False,
+            "failed_checks": [str(exc)],
+            "suggested_confidence": "UNKNOWN",
+            "reasoning": f"Unexpected error during validation: {exc}",
         }
 
 # ---------------------------------------------------------------------------
