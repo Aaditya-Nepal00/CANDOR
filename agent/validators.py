@@ -52,6 +52,11 @@ SCHEMAS: dict[str, dict[str, Any]] = {
         "warning_confidence": "SUSPECTED",
         "fail_confidence": "SUSPECTED",
     },
+    "volatility3": {
+        "required_keywords": ["pid"],
+        "required_keywords_any_secondary": ["process", "imagefilename", "ppid", "args", "protection"],
+        "fail_confidence": "SUSPECTED",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -119,12 +124,25 @@ def _validate_log2timeline(output: str, schema: dict) -> tuple[bool, list[str]]:
     return (len(failures) == 0, failures)
 
 
+def _validate_volatility3(output: str, schema: dict) -> tuple[bool, list[str]]:
+    """Validate Volatility3 output for PID column and plugin-specific headers."""
+    failures: list[str] = []
+    ol = output.lower()
+    if not any(kw in ol for kw in schema["required_keywords"]):
+        failures.append("Missing PID column header")
+    sec = schema.get("required_keywords_any_secondary", [])
+    if sec and not any(kw in ol for kw in sec):
+        failures.append("Missing plugin-specific header (Process/ImageFileName/PPID/Args/Protection)")
+    return (len(failures) == 0, failures)
+
+
 _VALIDATORS = {
     "amcache":      _validate_amcache,
     "analyzemft":   _validate_analyzemft,
     "evtx":         _validate_evtx,
     "prefetch":     _validate_prefetch,
     "log2timeline": _validate_log2timeline,
+    "volatility3":  _validate_volatility3,
 }
 
 # ---------------------------------------------------------------------------

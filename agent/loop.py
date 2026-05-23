@@ -48,6 +48,9 @@ _TOOLS: list[tuple[str, list[str]]] = [
     ("analyzemft",   ["analyzemft", "-f", "{case_dir}/$MFT", "-o", "csv"]),
     ("evtx",         ["EvtxECmd", "-f",
                       "{case_dir}/Windows/System32/winevt/Logs/Security.evtx"]),
+    ("volatility_pslist",  ["vol", "-f", "{case_dir}/memory.raw", "windows.pslist.PsList"]),
+    ("volatility_cmdline", ["vol", "-f", "{case_dir}/memory.raw", "windows.cmdline.CmdLine"]),
+    ("volatility_malfind", ["vol", "-f", "{case_dir}/memory.raw", "windows.malware.malfind.Malfind"]),
     ("log2timeline", ["log2timeline.py", "--storage-file",
                       "{case_dir}/timeline.plaso", "{case_dir}"]),
 ]
@@ -74,6 +77,21 @@ _RETRY_VARIANTS: dict[str, list[list[str]]] = {
          "{case_dir}/Windows/System32/winevt/Logs/System.evtx"],
         ["EvtxECmd", "-d",
          "{case_dir}/Windows/System32/winevt/Logs"],
+    ],
+    "volatility_pslist": [
+        ["vol", "-f", "{case_dir}/memory.raw", "windows.pslist.PsList", "--pid", "0"],
+        ["vol", "-f", "{case_dir}/memory.mem", "windows.pslist.PsList"],
+        ["vol", "-f", "{case_dir}/memory.dmp", "windows.pslist.PsList"],
+    ],
+    "volatility_cmdline": [
+        ["vol", "-f", "{case_dir}/memory.raw", "windows.cmdline.CmdLine"],
+        ["vol", "-f", "{case_dir}/memory.mem", "windows.cmdline.CmdLine"],
+        ["vol", "-f", "{case_dir}/memory.dmp", "windows.cmdline.CmdLine"],
+    ],
+    "volatility_malfind": [
+        ["vol", "-f", "{case_dir}/memory.raw", "windows.malware.malfind.Malfind"],
+        ["vol", "-f", "{case_dir}/memory.mem", "windows.malware.malfind.Malfind"],
+        ["vol", "-f", "{case_dir}/memory.dmp", "windows.malware.malfind.Malfind"],
     ],
     "log2timeline": [
         ["log2timeline.py", "--logfile", "{case_dir}/l2t.log",

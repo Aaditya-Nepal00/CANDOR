@@ -21,6 +21,7 @@ CONFIG: dict[str, Any] = {
         "amcache": "execution", "prefetch": "execution",
         "analyzemft": "filesystem", "evtx": "event_log",
         "log2timeline": "timeline",
+        "volatility3": "memory",
     },
     "gap_keywords": ["gap", "missing"],
 }

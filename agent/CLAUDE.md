@@ -16,13 +16,16 @@ Execute these steps in exact order. Do not skip steps. Do not reorder.
 | 2 | `get_prefetch()` | Corroborate execution evidence — confirm what Amcache reports |
 | 3 | `get_mft()` | Build a filesystem timeline from $MFT — file creation, modification, access |
 | 4 | `get_evtx()` | Parse Security, System, and Application event logs for correlated activity |
+| 4a | `get_memory(plugin="pslist")`, `get_memory(plugin="cmdline")`, `get_memory(plugin="malfind")` | Memory forensics — process list, command lines, code injection detection — ONLY if memory image present in case directory |
 | 5 | `get_timeline()` | Generate a full Plaso/log2timeline super-timeline ONLY if steps 1–4 surfaced anomalies |
 | 6 | `tag_finding()` | For EVERY finding from steps 1–5, classify confidence (see §4) |
 | 7 | Cross-correlate | Compare all sources: Does Amcache match Prefetch? Does MFT align with EVTX? |
 | 7a | `correlate_findings()` | Call with ALL tagged findings BEFORE writing any narrative — deterministic rule checks |
 | 8 | `generate_candor_report()` | Produce the final structured report with all findings, dead ends, and executive summary |
 
-**Step 5 gate**: Only call `get_timeline()` if at least one finding from steps 1–4 is SUSPECTED or shows a temporal anomaly. A full timeline is expensive — don't run it on clean cases.
+**Step 5 gate**: Only call `get_timeline()` if at least one finding from steps 1–4a is SUSPECTED or shows a temporal anomaly. A full timeline is expensive — don't run it on clean cases.
+
+**Step 4a gate**: Only call `get_memory()` if a memory image file (*.raw, *.mem, *.vmem, *.dmp) is present at the root of the case directory. If no memory image is present, skip Step 4a entirely and proceed to Step 5. Run all three plugins (pslist, cmdline, malfind) in sequence when memory evidence is available — each provides a different forensic angle.
 
 **Step 7 is manual analysis**: You do this yourself. Compare timestamps, filenames, hashes, and execution paths across all tool outputs. Document every match and every contradiction.
 
@@ -96,6 +99,7 @@ These are red flags. When you see them, escalate the confidence scrutiny and doc
 | Amcache entry exists but file is absent from MFT | File was deleted after execution — possible cleanup by attacker | Check `$Recycle.Bin` and USN Journal for deletion records |
 | Multiple failed logons (4625) followed by success (4624) | Brute force or credential stuffing | Correlate source IP/workstation; check for lateral movement |
 | Service installation (7045) at unusual hours | Persistence mechanism or backdoor installation | Cross-reference service binary path with Amcache and MFT |
+| Volatility malfind hit on legitimate process (lsass.exe, services.exe, explorer.exe) | Code injection into a trusted process | Cross-reference PID with windows.pslist parent chain; check for unusual parent-child relationships |
 
 ## 9. Operating Principles
 

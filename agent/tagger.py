@@ -45,6 +45,8 @@ _PARTIAL = [
 _INTERPRET = [
     "offset", "inode", "entropy", "hash", "md5", "sha1", "sha256", "base64",
     "hex dump", "strings found", "signature", "magic bytes", "cluster", "sector",
+    "pid", "ppid", "vad", "injection", "page_execute_readwrite", "shellcode",
+    "reflective", "hollowing",
 ]
 
 _SUMMARY_MAX = 200

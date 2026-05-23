@@ -246,7 +246,49 @@ def get_evtx(case_dir: str, log_name: str = "Security") -> dict[str, Any]:
     return _run(cmd, "evtx", evidence_file=evtx_file)
 
 # ---------------------------------------------------------------------------
-# Tool 6 – Epistemic Tagger
+# Tool 6 – Memory Forensics (Volatility3)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def get_memory(case_dir: str, plugin: str = "pslist") -> dict[str, Any]:
+    """Run a Volatility3 memory forensics plugin against a memory image.
+
+    Auto-detects the memory image (*.raw, *.mem, *.vmem, *.dmp) in *case_dir*
+    and runs ``vol -f <image> <plugin>``.  Supports three plugins: pslist,
+    cmdline, and malfind.  Returns structured JSON with findings and hashes.
+    """
+    _PLUGIN_MAP = {
+        "pslist":  "windows.pslist.PsList",
+        "cmdline": "windows.cmdline.CmdLine",
+        "malfind": "windows.malware.malfind.Malfind",
+    }
+    if plugin not in _PLUGIN_MAP:
+        return {
+            "tool": "volatility3", "output": "", "timestamp": _ts(),
+            "error": f"Unsupported plugin '{plugin}'. CANDOR supports: pslist, cmdline, malfind",
+            "hash_before": None, "hash_after": None,
+        }
+    case_path = Path(case_dir)
+    memory_file: Path | None = None
+    for ext in ("*.raw", "*.mem", "*.vmem", "*.dmp"):
+        matches = list(case_path.glob(ext))
+        if matches:
+            memory_file = matches[0]
+            break
+    if memory_file is None:
+        return {
+            "tool": "volatility3", "output": "", "timestamp": _ts(),
+            "error": (
+                "No memory image found in case directory. "
+                "Expected one of: *.raw, *.mem, *.vmem, *.dmp"
+            ),
+            "hash_before": None, "hash_after": None,
+        }
+    cmd = ["vol", "-f", str(memory_file), _PLUGIN_MAP[plugin]]
+    return _run(cmd, "volatility3", evidence_file=str(memory_file))
+
+# ---------------------------------------------------------------------------
+# Tool 7 – Epistemic Tagger
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
