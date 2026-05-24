@@ -1,15 +1,19 @@
 # CANDOR
 ## Confidence-Annotated DFIR Output with Reasoning
 
-AI agents are bad at forensics for a specific reason: they don't distinguish between what they know and what they're guessing. Hand an LLM a disk image and ask it to investigate, and you'll get a confident, well-structured report where confirmed artifacts and hallucinated conclusions are formatted identically. A practitioner reading that report has no way to know which findings came from actual tool output and which the model invented to fill gaps. In incident response, that's not a minor annoyance — it's a liability.
+---
 
-CANDOR forces the issue. It wraps SANS SIFT forensic tools and Volatility3 memory forensics behind an MCP server, runs them against case evidence, passes each result through deterministic schema validation and rule-based cross-correlation, and tags every finding with one of four confidence classes before it can enter the final report. The agent cannot produce a finding without classifying it. If a tool fails, the finding says UNKNOWN. If the output needs interpretation, it says INFERRED. No finding gets to hide behind ambiguity. The output is an HTML report where green means confirmed, red means unknown, and a practitioner can tell at a glance which parts of the investigation to trust and which to dig into further.
+**Problem:** AI forensic agents hallucinate findings with the same authoritative tone as confirmed evidence. A practitioner reading the report can't tell which conclusions came from tool output and which the model invented.
+
+**Approach:** Every finding passes through deterministic schema validation and rule-based cross-correlation before it can enter the report. Each finding carries one of four confidence classes — CONFIRMED, INFERRED, SUSPECTED, or UNKNOWN. The LLM can downgrade confidence; it cannot upgrade it.
+
+**Validated against:** NIST CFReDS Hacking Case — cryptographically authenticated forensic evidence, 10-minute autonomous investigation, 9 findings classified, anti-forensic activity (log clearing) detected, attacker SID attributed to packet-sniffer kernel driver loading.
 
 ---
 
-## What CANDOR Does
+The problem with AI forensics isn't that models are wrong. It's that they hide which parts of their output are guesses. Hand an LLM a disk image and you'll get a confident, well-structured report where confirmed artifacts and hallucinated conclusions are formatted identically. The practitioner reading it has no way to tell which findings came from tool output and which the model invented to fill gaps. In incident response — where investigators testify under oath about their findings — that's not a minor annoyance. It's a liability.
 
-CANDOR is an automated forensic triage agent. It runs standard disk and memory analysis tools on case evidence, validates the outputs, and generates a structured, audited report. By separating data collection and rule-based correlation from the language model's analysis, it prevents hallucinated evidence from corrupting the investigation.
+CANDOR forces every finding to declare its own uncertainty before it can be presented. Confirmed artifacts get a green badge. Tool failures get a red one. Conclusions that required interpretation get amber. The epistemic state of each claim is visible at a glance, and the LLM cannot hide ambiguity behind authoritative tone.
 
 ---
 
@@ -71,7 +75,7 @@ Every SUSPECTED and UNKNOWN finding comes with specific, actionable next steps d
 
 ![CANDOR Architecture](docs/diagrams/architecture.svg)
 
-The architecture isolates the LLM agent from the host operating system using a strict trust boundary. The LLM runs in user space and interacts with the target environment solely through the Model Context Protocol (MCP) server. This server exposes ten read-only tools, computes SHA-256 hashes of all evidence before and after every operation to detect modification, and prevents the agent from running arbitrary command-line processes or writing to disk. By locking all file operations behind typed, programmatic API endpoints, CANDOR ensures that the LLM cannot tamper with the evidence or run destructive actions.
+The architecture isolates the LLM agent from the host operating system using a strict trust boundary. The LLM runs in user space and interacts with the target environment solely through the Model Context Protocol (MCP) server. This server exposes ten read-only tools, computes SHA-256 hashes of all evidence before and after every operation to detect modification, and prevents the agent from running arbitrary command-line processes or writing to disk. By locking all file operations behind typed, programmatic API endpoints, CANDOR ensures the LLM has no path to tamper with evidence undetected — every modification attempt produces a hash mismatch in the structured output.
 
 ---
 
@@ -89,7 +93,7 @@ The architecture isolates the LLM agent from the host operating system using a s
 
 ## Evidence Integrity
 
-Every time the MCP server runs a forensic tool, it hashes the evidence before and after. Both hashes appear in the tool result. `CLAUDE.md` instructs the agent to verify they match and halt immediately if they differ — it's a prompt instruction backed by code that generates the hashes unconditionally.
+Every time the MCP server runs a forensic tool, it hashes the evidence before and after. Both hashes appear in the tool result. `CLAUDE.md` instructs the agent to verify they match and halt immediately if they differ — it's a prompt instruction backed by code that generates the hashes unconditionally. The SHA-256 before/after check is the architectural guarantee — even if a wrapped tool tried to modify evidence, the hash mismatch would be visible in the output and the agent is instructed to halt. CANDOR doesn't trust the underlying tools' read-only claims; it verifies them on every call.
 
 Three implementations handle different evidence shapes:
 
