@@ -13,7 +13,43 @@ The hallucination problem in forensic AI isn't hypothetical. When an LLM-based a
 
 The insight behind CANDOR is that labeling confidence matters more than improving accuracy. You can't prevent an AI from occasionally being wrong, but you can force it to show its work. If every finding carries a confidence tag — CONFIRMED when two tools agree, SUSPECTED when they contradict, UNKNOWN when a tool crashed — then a human analyst can triage the report efficiently. They spend time verifying the yellow and red items instead of re-doing the entire investigation. The problem isn't that AI makes mistakes. The problem is that AI mistakes look the same as AI conclusions.
 
-Since v1, CANDOR has added two more guardrails between the LLM and the report: deterministic schema validators that check whether tool output actually looks like forensic data, and a rule-based cross-correlator that runs timestamp arithmetic and corroboration checks before the LLM writes a single word of narrative. These exist because LLMs are genuinely bad at precise boolean logic and timestamp comparison — they pattern-match instead of compute. The correlator does the computing.
+CANDOR puts two deterministic guardrails between the LLM and the report: schema validators that check whether tool output actually looks like forensic data, and a rule-based cross-correlator that runs timestamp arithmetic and corroboration checks before the LLM writes a single word of narrative. These exist because LLMs are genuinely bad at precise boolean logic and timestamp comparison — they pattern-match instead of compute. The correlator does the computing.
+
+---
+
+## Validated Against Real Evidence
+
+The NIST CFReDS "Hacking Case" ([cfreds.nist.gov/all/NIST/HackingCase](https://cfreds.nist.gov/all/NIST/HackingCase)) is a published forensic training dataset used in law enforcement education worldwide. The evidence is a Dell Latitude CPi running Windows XP SP1, abandoned by a suspect known as "Mr. Evil." The disk image is two E01 segments totalling 1.1 GB with SHA-256 hashes published by NIST — cryptographic chain of custody from the start.
+
+CANDOR completed the investigation autonomously in approximately 10 minutes. It produced 9 findings: **6 CONFIRMED, 1 SUSPECTED, 2 UNKNOWN** — and correctly determined that 0 INFERRED findings were needed, because every non-trivial conclusion was corroborated to CONFIRMED or left at SUSPECTED for a human to resolve. It also correctly identified that the absence of Amcache data was not a gap in the investigation but expected behavior: Windows XP predates the Amcache registry hive by eight years. The full demo is in the next section.
+
+---
+
+## Demo: NIST CFReDS Hacking Case Investigation
+
+### Report Overview
+
+![HTML report header showing case name, 9 findings, and color-coded confidence counts: 6 CONFIRMED, 1 SUSPECTED, 2 UNKNOWN](docs/screenshots/report-overview.jpeg)
+
+The HTML report opens with case metadata, a finding count, and a confidence breakdown. Color-coded badges let a practitioner immediately triage which findings are solid (green) and which require follow-up (orange, red). The report is a self-contained HTML file with no external dependencies — open it offline, copy it anywhere.
+
+### Executive Summary for Non-Technical Readers
+
+![Plain-English executive summary describing Mr. Evil's 8-day attack activity](docs/screenshots/executive%20summary.jpeg)
+
+`CLAUDE.md` requires every investigation to open with a plain-English paragraph written for a non-technical executive. The summary above describes an 8-day intrusion — network reconnaissance tools installed on 2004-08-20, active reconnaissance on 2004-08-25, and packet capture running on 2004-08-27 — in language that doesn't require knowing what a `.pf` file is.
+
+### Autonomous Timeline Reconstruction
+
+![Attack timeline showing Phase 1 Tool Installation 2004-08-20, Phase 2 Network Reconnaissance 2004-08-25, Phase 3 Active Packet Capture 2004-08-27](docs/screenshots/multi-phase-timeline.jpeg)
+
+With no human direction, CANDOR reconstructed a three-phase attack timeline spanning eight days using MFT `$SI` timestamps, Prefetch execution metadata (extracted from MFT `$SI` records when PECmd.py was unavailable on PATH), and event log entries. Phase 1: tool installation. Phase 2: network reconnaissance. Phase 3: active packet capture. The agent corroborated timestamps across artifact types before assigning CONFIRMED to each phase boundary.
+
+### SID-Level Attribution
+
+![Mr. Evil SID S-1-5-21-2000478354-688789844-1708537768-1003 attributed to NetGroup Packet Filter Driver loading at 2004-08-27T15:34:01Z](docs/screenshots/sid-attribution.jpeg)
+
+CANDOR attributed the loading of the NetGroup Packet Filter Driver — a kernel-level packet sniffer — to Mr. Evil's specific user SID (`S-1-5-21-2000478354-688789844-1708537768-1003`) at `2004-08-27T15:34:01Z`. Attribution to a named user SID from a service installation event is a textbook example of where event log and registry evidence combine for a CONFIRMED finding. The agent also identified Security log clearing as anti-forensic activity: `SecEvent.Evt` contained 0 records against `SysEvent.Evt`'s 141 records over the same period.
 
 ---
 
@@ -59,6 +95,8 @@ CANDOR has six layers. Each does exactly one thing.
                     └──────────────────────────────────┘
 ```
 
+*(SVG version coming)*
+
 ### Layer 1 — The MCP Server (`mcp_server/server.py`, 424 lines)
 
 The server turns SIFT forensic tools and Volatility3 into a Model Context Protocol server running over stdio. It exposes ten typed functions. Six collect evidence: `get_amcache()`, `get_prefetch()`, `get_mft()`, `get_evtx()`, `get_memory()`, and `get_timeline()`. Four do post-processing: `tag_finding()`, `validate_output()`, `correlate_findings()`, and `generate_candor_report()`. The LLM calls these with structured arguments. It cannot run `rm`. It cannot run `dd`. It cannot `chmod` anything. The attack surface is ten defined operations, all read-only.
@@ -87,6 +125,26 @@ CANDOR doesn't include its own LLM runtime — it runs inside Claude Code. `CLAU
 
 ---
 
+## Autonomous Execution
+
+### Self-Correction in Action
+
+The NIST case demonstrated two self-corrections the agent made without human intervention.
+
+**PECmd.py not on PATH.** The Prefetch parser wasn't available in the SIFT environment. Rather than returning UNKNOWN and moving on, the agent extracted Prefetch execution timestamps directly from MFT `$SI` records — a valid alternative source that preserved the execution timeline.
+
+**EvtxECmd can't parse `.Evt` format.** The Windows 2000/XP era uses the older `.Evt` binary format, not `.evtx`. When EvtxECmd returned an error, the agent found `libevt evtxexport` as an alternative parser and re-ran the analysis successfully. This is `CLAUDE.md`'s three-retry self-correction rule in practice: exhaust alternatives before accepting UNKNOWN.
+
+![Agent finding libevt evtxexport as alternative parser after EvtxECmd fails on .Evt format files](docs/screenshots/self-correction-libevt.jpeg)
+
+### Reasoning Trace
+
+CANDOR surfaces its investigative reasoning as it works — not just conclusions, but decision points: which tool to try next, whether a result warrants a retry, and why a particular confidence class was assigned.
+
+![Agent's narrative reasoning during investigation, showing next-step decisions and tool retries](docs/screenshots/autonomous-reasoning.jpeg)
+
+---
+
 ## How It Works End to End
 
 You point Claude Code at a case directory and tell it to investigate. The agent reads `CLAUDE.md`, sees the MCP server, and starts the sequence.
@@ -97,11 +155,17 @@ Prefetch is next. `get_prefetch()` hashes the Prefetch directory by computing a 
 
 After MFT and EVTX run through the same pattern, the agent checks whether a memory image exists in the case directory root. If it finds a `*.raw`, `*.mem`, `*.vmem`, or `*.dmp` file, it calls `get_memory()` three times — pslist for the running process list, cmdline for command-line arguments, malfind for memory regions with executable permissions not mapped to a file. Each call hashes the image before and after. Because the output contains "pid" and "ppid," all three findings land INFERRED. A process list is data, not a conclusion.
 
-If any finding from steps 1 through 4a is SUSPECTED or shows a temporal anomaly — including a memory forensics hit like a malfind detection — `get_timeline()` fires next to generate a full Plaso super-timeline. Otherwise it's skipped; the timeline is expensive.
+If any finding from steps 1 through 4a is SUSPECTED or shows a temporal anomaly, `get_timeline()` fires next to generate a full Plaso super-timeline. Otherwise it's skipped; the timeline is expensive.
 
 Then `correlate_findings()` runs the three deterministic rules over the full finding list. Do any two execution-type findings agree within 5 minutes? Is Amcache present but Prefetch UNKNOWN? Are any two findings from different artifact categories within 2 seconds of each other? The LLM gets the correlation report and works it into its analysis.
 
 Finally, `generate_candor_report()` produces the HTML. You open it and see everything: what was found, confidence class, reasoning, and exactly what to investigate next for anything that isn't green.
+
+### Dead Ends and Audit Trail
+
+Every SUSPECTED and UNKNOWN finding comes with specific, actionable next steps drawn from `dead_ends.json` — not "further investigation recommended" but "Security log has 0 records against System log's 141 — check VSS for prior log copies and verify Event ID 1102 for audit log clearing." These are deduplicated at the report level so you get a single prioritized list of what to do next, not one advisory per finding.
+
+![Deduplicated dead ends section at the bottom of the HTML report, listing actionable next-investigation-steps](docs/screenshots/audit-trail-dead-ends.jpeg)
 
 ---
 
@@ -162,6 +226,8 @@ Candor-sift/
 │   └── dead_ends.json     # Configurable next-step advisories per confidence class (21 lines)
 ├── mcp_server/
 │   └── server.py          # MCP server exposing 10 tools over stdio (424 lines)
+├── docs/
+│   └── screenshots/       # Demo screenshots from NIST CFReDS investigation
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -177,7 +243,7 @@ Candor-sift/
 
 **SUSPECTED** means something is off. The tool wrote warnings to stderr, the output contains "truncated" or "0 results," or the finding contradicts another source. Amcache says `evil.exe` ran at 14:32 UTC but there's no `.pf` file in Prefetch. That might mean Prefetch was disabled or the file was cleaned up, but you can't rely on the Amcache finding without checking. SUSPECTED findings always carry dead-end advisories from `dead_ends.json`.
 
-**UNKNOWN** means the tool failed outright — crashed, timed out after 600 seconds, returned empty stdout, or the evidence file didn't exist. After up to three retries with different parameters, if it's still failing, it stays UNKNOWN. Knowing a tool failed is itself a finding.
+**UNKNOWN** means the tool failed outright — crashed, timed out after 600 seconds, returned empty stdout, or the evidence file didn't exist. After up to three retries with different parameters, if it's still failing, it stays UNKNOWN. Knowing a tool failed is itself a finding. In the NIST case, UNKNOWN on Amcache was the correct result: Windows XP predates the Amcache registry hive by eight years, so its absence is evidence of nothing.
 
 ---
 
@@ -192,6 +258,13 @@ Three implementations handle different evidence shapes:
 - **Entire case tree** (`log2timeline`): `_hash_directory()` with a recursive `**/*` glob and a 30-second timeout. If hashing takes longer than 30 seconds, `hash_before` and `hash_after` are `None` and a note appears in the error field.
 
 This is architectural, not advisory. The LLM doesn't decide whether to hash. It can't skip the check. The hashes are in the structured output the agent processes, not a suggestion it can override.
+
+In the NIST case, SHA-256 hashes of both evidence segments matched NIST's published values before analysis began, establishing cryptographic chain of custody:
+
+```
+4Dell Latitude CPi.E01  96bebe80f00541bf28fbc2ef0b02b580082ee6ad58837e991852ae66f077ec31
+4Dell Latitude CPi.E02  46bd09821dbb64675e5877d0ad7ec544a571fad5a3fd7fc3f0c3a16278887db5
+```
 
 ---
 
@@ -223,13 +296,13 @@ CANDOR integrates Volatility3 with three Windows plugins:
 
 Memory findings default to INFERRED because "pid," "ppid," "vad," "injection," "shellcode," "page_execute_readwrite," "reflective," and "hollowing" are all in the tagger's `_INTERPRET` keyword list. This is intentional. A process list is not a conclusion. A malfind hit on `lsass.exe` is worth investigating but means nothing alone — did pslist show an unusual parent process? Did MFT show a recently dropped DLL? Memory forensics is where cross-correlation matters most, and INFERRED is the right starting confidence.
 
+Volatility3 integration is **Windows memory only**. The three plugins are Windows-specific. Linux memory dumps need different plugins and separate kernel symbol packages.
+
 ---
 
 ## What CANDOR Cannot Do
 
 **No network capture parsing.** There's no pcap, Zeek, or Suricata integration. The architecture supports it — write a `@mcp.tool()` function, construct the command, call `_run()` — but it doesn't exist today.
-
-**Volatility3 integration is Windows memory only.** The three plugins are Windows-specific. Linux memory dumps need different plugins and separate kernel symbol packages. Extending `get_memory()`'s plugin map to support Linux is straightforward but not implemented.
 
 **It trusts the underlying tools.** If `amcache.py` has a parsing bug and produces plausible-looking wrong output, CANDOR tags it CONFIRMED. The tagger and validators check tool behavior and output structure, not tool correctness. A clean run with wrong data still gets a green badge. This is the fundamental limit of any wrapper-based approach.
 
