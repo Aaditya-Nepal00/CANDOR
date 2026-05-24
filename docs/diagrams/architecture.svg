@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="llmGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1f6feb"/>
+      <stop offset="100%" stop-color="#388bfd"/>
+    </linearGradient>
+    <linearGradient id="mcpGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6e40c9"/>
+      <stop offset="100%" stop-color="#8957e5"/>
+    </linearGradient>
+    <linearGradient id="taggerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#9e6a03"/>
+      <stop offset="100%" stop-color="#bb8009"/>
+    </linearGradient>
+    <linearGradient id="corrGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#bd561d"/>
+      <stop offset="100%" stop-color="#db6d28"/>
+    </linearGradient>
+    <linearGradient id="repGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#238636"/>
+      <stop offset="100%" stop-color="#2ea043"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7d8590"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="1100" fill="url(#bgGrad)"/>
+
+  <text x="450" y="40" text-anchor="middle" fill="#e6edf3" font-size="22" font-weight="600">CANDOR Architecture</text>
+  <text x="450" y="62" text-anchor="middle" fill="#7d8590" font-size="13">Confidence-Annotated DFIR Output with Reasoning</text>
+
+  <g filter="url(#shadow)">
+    <rect x="200" y="100" width="500" height="80" rx="8" fill="url(#llmGrad)" opacity="0.95"/>
+    <text x="450" y="128" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">Claude Code (LLM)</text>
+    <text x="450" y="150" text-anchor="middle" fill="#c9d1d9" font-size="12">Reads CLAUDE.md · Investigates autonomously · Calls 10 typed tools</text>
+    <text x="450" y="168" text-anchor="middle" fill="#c9d1d9" font-size="11" font-style="italic">Cannot run arbitrary commands · Cannot bypass the trust boundary</text>
+  </g>
+
+  <line x1="450" y1="190" x2="450" y2="220" stroke="#7d8590" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="465" y="208" fill="#7d8590" font-size="10" font-style="italic">MCP over stdio</text>
+
+  <g>
+    <rect x="50" y="235" width="800" height="270" rx="10" fill="none" stroke="#f85149" stroke-width="2" stroke-dasharray="6,4"/>
+    <rect x="380" y="225" width="140" height="22" rx="4" fill="#0d1117"/>
+    <text x="450" y="241" text-anchor="middle" fill="#f85149" font-size="12" font-weight="600">TRUST BOUNDARY</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="80" y="260" width="740" height="230" rx="8" fill="url(#mcpGrad)" opacity="0.95"/>
+    <text x="450" y="286" text-anchor="middle" fill="#fff" font-size="15" font-weight="600">mcp_server/server.py — read-only forensic tools</text>
+
+    <text x="100" y="318" fill="#e6edf3" font-size="12" font-weight="600">Evidence Collection (6)</text>
+    <g font-size="11" fill="#fff">
+      <rect x="100" y="328" width="110" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="155" y="346" text-anchor="middle">get_amcache</text>
+
+      <rect x="220" y="328" width="110" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="275" y="346" text-anchor="middle">get_prefetch</text>
+
+      <rect x="340" y="328" width="110" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="395" y="346" text-anchor="middle">get_mft</text>
+
+      <rect x="460" y="328" width="110" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="515" y="346" text-anchor="middle">get_evtx</text>
+
+      <rect x="580" y="328" width="110" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="635" y="346" text-anchor="middle">get_memory</text>
+
+      <rect x="700" y="328" width="110" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="755" y="346" text-anchor="middle">get_timeline</text>
+    </g>
+
+    <text x="100" y="385" fill="#e6edf3" font-size="12" font-weight="600">Post-Processing (4)</text>
+    <g font-size="11" fill="#fff">
+      <rect x="100" y="395" width="160" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="180" y="413" text-anchor="middle">tag_finding</text>
+
+      <rect x="270" y="395" width="160" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="350" y="413" text-anchor="middle">validate_output</text>
+
+      <rect x="440" y="395" width="180" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="530" y="413" text-anchor="middle">correlate_findings</text>
+
+      <rect x="630" y="395" width="180" height="28" rx="4" fill="#0d1117" opacity="0.4"/>
+      <text x="720" y="413" text-anchor="middle">generate_candor_report</text>
+    </g>
+
+    <rect x="80" y="445" width="740" height="35" rx="4" fill="#0d1117" opacity="0.6"/>
+    <text x="450" y="467" text-anchor="middle" fill="#7ee787" font-size="12" font-weight="600">Every call: SHA-256 hash BEFORE and AFTER tool execution · evidence integrity guaranteed</text>
+  </g>
+
+  <line x1="450" y1="510" x2="450" y2="540" stroke="#7d8590" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="465" y="528" fill="#7d8590" font-size="10" font-style="italic">result dict</text>
+
+  <g filter="url(#shadow)">
+    <rect x="150" y="555" width="600" height="100" rx="8" fill="url(#taggerGrad)" opacity="0.95"/>
+    <text x="450" y="582" text-anchor="middle" fill="#fff" font-size="15" font-weight="600">agent/tagger.py — Epistemic Tagger</text>
+    <text x="450" y="603" text-anchor="middle" fill="#c9d1d9" font-size="12">Deterministic keyword ladder · 4 confidence classes · Schema validation</text>
+    <g font-size="10" font-weight="600">
+      <rect x="180" y="618" width="100" height="24" rx="4" fill="#238636"/>
+      <text x="230" y="634" text-anchor="middle" fill="#fff">CONFIRMED</text>
+
+      <rect x="290" y="618" width="100" height="24" rx="4" fill="#9e6a03"/>
+      <text x="340" y="634" text-anchor="middle" fill="#fff">INFERRED</text>
+
+      <rect x="400" y="618" width="100" height="24" rx="4" fill="#bd561d"/>
+      <text x="450" y="634" text-anchor="middle" fill="#fff">SUSPECTED</text>
+
+      <rect x="510" y="618" width="100" height="24" rx="4" fill="#8e1519"/>
+      <text x="560" y="634" text-anchor="middle" fill="#fff">UNKNOWN</text>
+    </g>
+    <text x="620" y="633" fill="#c9d1d9" font-size="10" font-style="italic">no LLM</text>
+  </g>
+
+  <line x1="450" y1="665" x2="450" y2="695" stroke="#7d8590" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="465" y="683" fill="#7d8590" font-size="10" font-style="italic">Finding[]</text>
+
+  <g filter="url(#shadow)">
+    <rect x="150" y="710" width="600" height="100" rx="8" fill="url(#corrGrad)" opacity="0.95"/>
+    <text x="450" y="737" text-anchor="middle" fill="#fff" font-size="15" font-weight="600">agent/correlator.py — Rule-Based Cross-Correlator</text>
+    <text x="450" y="758" text-anchor="middle" fill="#c9d1d9" font-size="12">3 deterministic rules · runs before LLM writes a word of narrative</text>
+    <g font-size="10">
+      <text x="200" y="785" fill="#c9d1d9">• Timestamp proximity (300s / 3600s)</text>
+      <text x="430" y="785" fill="#c9d1d9">• Corroboration gaps</text>
+      <text x="600" y="785" fill="#c9d1d9">• Known-bad patterns</text>
+    </g>
+    <text x="450" y="800" text-anchor="middle" fill="#7ee787" font-size="10" font-style="italic">deterministic math · no LLM hallucination possible</text>
+  </g>
+
+  <line x1="450" y1="820" x2="450" y2="850" stroke="#7d8590" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="465" y="838" fill="#7d8590" font-size="10" font-style="italic">CorrelationReport</text>
+
+  <g filter="url(#shadow)">
+    <rect x="200" y="865" width="500" height="80" rx="8" fill="url(#repGrad)" opacity="0.95"/>
+    <text x="450" y="892" text-anchor="middle" fill="#fff" font-size="15" font-weight="600">agent/reporter.py — HTML Report Generator</text>
+    <text x="450" y="914" text-anchor="middle" fill="#c9d1d9" font-size="12">Self-contained HTML · zero dependencies · color-coded confidence badges</text>
+    <text x="450" y="932" text-anchor="middle" fill="#c9d1d9" font-size="11" font-style="italic">Open it offline · Copy it anywhere · Open in any browser</text>
+  </g>
+
+  <g>
+    <rect x="50" y="975" width="800" height="80" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+    <text x="450" y="998" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="600">Architectural Guardrails</text>
+    <g font-size="11" fill="#c9d1d9">
+      <text x="80" y="1020">• LLM cannot upgrade confidence — only downgrade if validators fail</text>
+      <text x="80" y="1038">• Correlator runs deterministic math before LLM writes narrative</text>
+      <text x="500" y="1020">• Every evidence access produces SHA-256 hash before and after</text>
+      <text x="500" y="1038">• Schema validators check tool output structure, not just tool exit code</text>
+    </g>
+  </g>
+</svg>

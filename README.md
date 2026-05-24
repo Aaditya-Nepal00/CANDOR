@@ -95,7 +95,7 @@ CANDOR has six layers. Each does exactly one thing.
                     └──────────────────────────────────┘
 ```
 
-*(SVG version coming)*
+![CANDOR Architecture Diagram](docs/diagrams/architecture.svg)
 
 ### Layer 1 — The MCP Server (`mcp_server/server.py`, 424 lines)
 
