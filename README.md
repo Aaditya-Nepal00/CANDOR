@@ -50,7 +50,7 @@ The HTML report is a single self-contained file with no external dependencies �
 
 SID `S-1-5-21-2000478354-688789844-1708537768-1003` (Mr. Evil, RID 1003) appeared in Service Control Manager logs starting the NetGroup Packet Filter Driver (WinPcap NPF) at 15:34:01Z — 63 seconds before Ethereal's first capture. Attribution was confirmed independently by Userenv Event ID 1517 naming `N-1A9ODN6ZXK4LQ\Mr. Evil` and by IE browser cookies across 7+ sites.
 
-Three independent artifact types placed the same network activity in a 6-second window: Application event log EAPOL events, System event log WZC service records, and the NetStumbler `.pf` creation timestamp. No single source would have been enough. The automated correlator couldn't confirm the pair on its own — its timestamp-proximity rule requires both sources to come from tools that produced output, and two of the tools had failed. The agent performed the cross-correlation manually per CLAUDE.md §7, documented all three sources, and noted the evidence exceeded the correlator's own RULE_CONFIRMED threshold. The finding was tagged CONFIRMED.
+Three independent artifact types placed the same network activity in a 6-second window: Application event log EAPOL events, System event log WZC service records, and the NetStumbler `.pf` creation timestamp. No single source would have been enough. The automated correlator couldn't confirm the pair on its own — its timestamp-proximity rule requires both sources to come from tools that produced output, and two of the tools had failed. The agent performed the cross-correlation manually per CLAUDE.md §7, documented all three sources, and noted the evidence exceeded the correlator's own RULE_CONFIRMED threshold. The finding went through `tag_finding` like every other — the deterministic tagger issued CONFIRMED because all three sources are direct observations of the same event in independent records. The derived three-phase attack narrative built on top of these events was tagged INFERRED, not CONFIRMED: corroborated observation and constructed causal chain get different badges, and that distinction came from the classification ladder, not the agent's discretion.
 
 ### Correlator behavior and dead-end execution
 
@@ -131,6 +131,8 @@ Any modification produces a visible hash mismatch in the structured output — t
 
 **Four classes, no severity sub-levels.** A minor stderr warning and a half-truncated output both land in SUSPECTED. The reasoning string explains the distinction; extend the tagger's classification ladder if you need finer granularity.
 
+**The tagger classifies described evidence.** `tag_finding` reads the finding text the agent submits. An agent that misdescribed synthesis as direct observation could earn a higher class than deserved. The audit trail is the check — every finding cites its raw tool invocations, so the description can be verified against the actual output — but this is detection-after-the-fact, not prevention.
+
 **The NIST case is almost certainly in LLM training data.** The CFReDS Hacking Case is a famous published dataset used in law enforcement training worldwide. CANDOR's mitigation: every CONFIRMED finding must trace to actual tool output produced during the run — hashes included. Dead-end follow-ups re-verified key claims live with `evtexport` rather than trusting recalled facts. Training-data familiarity doesn't help if the live tool output contradicts it.
 
 ---
@@ -152,7 +154,7 @@ sudo mount -t ntfs -o ro,loop,offset=32256 /mnt/ewf/ewf1 /mnt/case_disk
 
 offset 32256 = the NTFS partition at sector 63 × 512 bytes, as shown by mmls.
 
-CANDOR's findings are reproducible — the confidence classes are deterministic given the same tool outputs.
+Confidence classification is deterministic given the same finding inputs; the agent's investigative path may vary between runs, but every classification decision is reproducible from the cited tool outputs.
 
 ---
 
