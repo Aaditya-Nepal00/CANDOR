@@ -187,8 +187,14 @@ def get_timeline(case_dir: str) -> dict[str, Any]:
     Runs ``log2timeline.py`` against the case directory and returns
     structured JSON with findings.
     """
-    storage = os.path.join(case_dir, "timeline.plaso")
-    cmd = ["log2timeline.py", "--storage-file", storage, case_dir]
+    analysis_dir = Path(__file__).resolve().parent.parent / "analysis"
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+    storage_path = analysis_dir / f"{Path(case_dir).name}_timeline.plaso"
+    if storage_path.exists():
+        storage_path.unlink()
+    storage = str(storage_path)
+    cmd = ["log2timeline.py", "--storage-file", storage,
+           "--temporary_directory", str(analysis_dir), case_dir]
 
     def _timed_hash() -> tuple[str | None, str | None]:
         try:
