@@ -11,14 +11,14 @@ Every finding carries one of four confidence classes. The LLM can downgrade conf
 
 ## Validated Against Real Evidence
 
-The NIST CFReDS "Hacking Case" is a published forensic training dataset: a Dell Latitude CPi running Windows XP SP1, disk image belonging to a suspect known as "Mr. Evil." Both E01 segments were SHA-256 verified against NIST's published values before analysis began, then mounted read-only.
+The NIST CFReDS "Hacking Case" is a published forensic training dataset: a Dell Latitude CPi running Windows XP SP0, disk image belonging to a suspect known as "Mr. Evil." Both E01 segments were SHA-256 verified against NIST's published values before analysis began, then mounted read-only.
 
 ```
 4Dell Latitude CPi.E01  96bebe80f00541bf28fbc2ef0b02b580082ee6ad58837e991852ae66f077ec31
 4Dell Latitude CPi.E02  46bd09821dbb64675e5877d0ad7ec544a571fad5a3fd7fc3f0c3a16278887db5
 ```
 
-CANDOR ran autonomously for 11 minutes. Final tally: **18 findings — 7 CONFIRMED, 3 INFERRED, 3 SUSPECTED, 5 UNKNOWN.** The initial pass ended at the 11-minute mark; the agent then executed its own dead-end advisories as follow-ups without human direction.
+CANDOR ran autonomously for ~12 minutes. Final tally: **17 findings — 8 CONFIRMED, 2 INFERRED, 5 SUSPECTED, 2 UNKNOWN.** The initial pass ended at the 12-minute mark; the agent then executed its own dead-end advisories as follow-ups without human direction.
 
 ---
 
@@ -27,8 +27,8 @@ CANDOR ran autonomously for 11 minutes. Final tally: **18 findings — 7 CONFIRM
 ### Evidence verification and agent launch
 
 <table><tr>
-<td width="50%"><img src="docs/screenshots/evidence-verification-and-mount.jpeg" width="100%"><br><b>Evidence verification and mount</b><br><sub>NIST E01/E02 hashes verified against published SHA-256 values; image mounted read-only before the first tool call</sub></td>
-<td width="50%"><img src="docs/screenshots/agent-launch-autonomous-sequencing.jpeg" width="100%"><br><b>Autonomous investigation sequencing</b><br><sub>The agent works through the fixed CANDOR sequence: amcache → prefetch → MFT → event logs → correlate → report</sub></td>
+<td width="50%"><img src="docs/screenshots/01-evidence-verification-and-mount.jpeg" width="100%"><br><b>Evidence verification and mount</b><br><sub>NIST E01/E02 hashes verified against published SHA-256 values; image mounted read-only before the first tool call</sub></td>
+<td width="50%"><img src="docs/screenshots/02-agent-launch-autonomous-sequencing.jpeg" width="100%"><br><b>Autonomous investigation sequencing</b><br><sub>The agent works through the fixed CANDOR sequence: amcache → prefetch → MFT → event logs → correlate → report</sub></td>
 </tr></table>
 
 CANDOR doesn't need prompting to know what to run first. `CLAUDE.md` defines a fixed investigation sequence; the agent follows it and documents every step — which tools ran, which failed after three retries, and why each finding landed in its confidence class.
@@ -36,40 +36,42 @@ CANDOR doesn't need prompting to know what to run first. `CLAUDE.md` defines a f
 ### Final report
 
 <table><tr>
-<td width="100%"><img src="docs/screenshots/report-summary-confidence-classes.jpeg" width="100%"><br><b>Final report: 18 findings across four confidence classes</b><br><sub>7 CONFIRMED · 3 INFERRED · 3 SUSPECTED · 5 UNKNOWN — with prioritized, deduplicated dead-end advisories for every amber and red item</sub></td>
+<td width="100%"><img src="docs/screenshots/05-report-summary-confidence-classes.jpeg" width="100%"><br><b>Final report: 17 findings across four confidence classes</b><br><sub>8 CONFIRMED · 2 INFERRED · 5 SUSPECTED · 2 UNKNOWN — with prioritized, deduplicated dead-end advisories for every amber and red item</sub></td>
 </tr></table>
 
 The HTML report is a single self-contained file with no external dependencies — open it offline, copy it anywhere. The confidence breakdown at the top tells a reviewer exactly where to spend time. SUSPECTED and UNKNOWN findings carry specific, actionable next steps drawn from `dead_ends.json`.
 
-### SID attribution and anti-forensics
+### Attack timeline, timestomping, and the security log
 
 <table><tr>
-<td width="50%"><img src="docs/screenshots/sid-attribution-secevent-zero-records.jpeg" width="100%"><br><b>SID attribution and zero security records</b><br><sub>Service Control Manager links SID S-1-5-21-...-1003 (Mr. Evil, RID 1003) to NPF driver load at 15:34:01Z; SecEvent.Evt: 0 records across allocated and slack space</sub></td>
-<td width="50%"><img src="docs/screenshots/three-source-corroboration.jpeg" width="100%"><br><b>Three-source corroboration</b><br><sub>AppEvent EAPOL events, SysEvent WZC service stop/restart, and NetStumbler .pf creation timestamp all converge to the same 6-second window at 15:12:37–15:12:43Z</sub></td>
+<td width="50%"><img src="docs/screenshots/03-critical-finding-security-log.jpeg" width="100%"><br><b>Zero security records over 8 active days</b><br><sub>SecEvent.Evt shows zero records over 8 active days while System and Application logs parsed normally — flagged as possible security-log clearing</sub></td>
+<td width="50%"><img src="docs/screenshots/07-three-phase-attack-timeline.jpeg" width="100%"><br><b>Three-phase attack timeline</b><br><sub>CMD → PING → Telnet chain confirmed via MFT and Prefetch; timestomping detected on NetStumbler.exe ($SI 4 months before $FN) and LookAtLan/LookAtHost (6-month gap)</sub></td>
 </tr></table>
 
-SID `S-1-5-21-2000478354-688789844-1708537768-1003` (Mr. Evil, RID 1003) appeared in Service Control Manager logs starting the NetGroup Packet Filter Driver (WinPcap NPF) at 15:34:01Z — 63 seconds before Ethereal's first capture. Attribution was confirmed independently by Userenv Event ID 1517 naming `N-1A9ODN6ZXK4LQ\Mr. Evil` and by IE browser cookies across 7+ sites.
+The System event log (parsed via evtexport after EvtxECmd failed on the legacy .Evt format) recorded the NetGroup Packet Filter Driver (WinPcap NPF) starting at 2004-08-27T15:46:19Z, confirming active packet capture. The SecEvent.Evt finding is the more striking one: zero event records across 8 active days, while SysEvent.Evt (141 events) and AppEvent.Evt parsed cleanly over the same period. The zero-record state is CONFIRMED by tool output; whether the log was deliberately cleared is left INFERRED for human review.
 
-Three independent artifact types placed the same network activity in a 6-second window: Application event log EAPOL events, System event log WZC service records, and the NetStumbler `.pf` creation timestamp. No single source would have been enough. The automated correlator couldn't confirm the pair on its own — its timestamp-proximity rule requires both sources to come from tools that produced output, and two of the tools had failed. The agent performed the cross-correlation manually per CLAUDE.md §7, documented all three sources, and noted the evidence exceeded the correlator's own RULE_CONFIRMED threshold. The finding went through `tag_finding` like every other — the deterministic tagger issued CONFIRMED because all three sources are direct observations of the same event in independent records. The derived three-phase attack narrative built on top of these events was tagged INFERRED, not CONFIRMED: corroborated observation and constructed causal chain get different badges, and that distinction came from the classification ladder, not the agent's discretion.
+MFT analysis exposed timestomping on three executables. NetStumbler.exe has a `$SI` timestamp 4 months earlier than its `$FN` counterpart; LookAtLan.exe and LookAtHost.exe show a 6-month `$SI`/`$FN` gap. `$FN` is written by the NTFS kernel driver and is not modifiable through the Windows API, making it the authoritative timestamp. `$SI` timestamps are user-accessible — a months-long divergence from `$FN` is the signature of deliberate clock manipulation.
 
-### Correlator behavior and dead-end execution
+The CMD → PING → Telnet chain is CONFIRMED from MFT and Prefetch: `cmd.exe` launched `ping.exe`, which preceded `telnet.exe` in the execution timeline. All three executables have corroborating `.pf` files. DEFRAG.EXE and DFRGNTFS.EXE executed 220ms apart immediately after the attack sequence. That combination — two disk defragmentation tools, together, right at that moment — is tagged SUSPECTED: the intent to overwrite slack space is inferred from timing and sequencing, not directly observed.
+
+### Fact/interpretation split and hash-trip self-diagnosis
 
 <table><tr>
-<td width="50%"><img src="docs/screenshots/correlator-false-positive-handling.jpeg" width="100%"><br><b>Correlator false-positive handling</b><br><sub>RULE_SUSPECTED fires on amcache_without_prefetch (HIGH); agent identifies expected absence for Windows XP and documents the registry check to verify</sub></td>
-<td width="50%"><img src="docs/screenshots/dead-end-execution-confidence-upgrade.jpeg" width="100%"><br><b>Dead-end executed as follow-up</b><br><sub>Agent runs its own dead-end advisory — evtexport -m all — and returns zero records from SecEvent.Evt, confirming the CONFIRMED finding for zero security records</sub></td>
+<td width="50%"><img src="docs/screenshots/06-fact-interpretation-split.jpeg" width="100%"><br><b>Fact/interpretation split</b><br><sub>Zero security records tagged CONFIRMED (directly observable tool output); "deliberately cleared" tagged INFERRED — same event, two different badges</sub></td>
+<td width="50%"><img src="docs/screenshots/04-hash-trip-self-diagnosis.jpeg" width="100%"><br><b>Hash-trip self-diagnosis</b><br><sub>Mid-run integrity guardrail fired; agent stopped, investigated, and root-caused the mismatch to server.py writing timeline.plaso inside the hashed case directory</sub></td>
 </tr></table>
 
-The correlator fired RULE_SUSPECTED on `amcache_without_prefetch` (HIGH severity). The agent identified it as a false positive: Amcache is a Windows 8+ artifact — its absence on XP is expected behavior, not anti-forensics. The agent documented the specific registry key a human could run to verify, then moved on.
+### Dead-end execution and chain-of-custody
+
+<table><tr>
+<td width="100%"><img src="docs/screenshots/08-integrity-note-and-dead-ends.jpeg" width="100%"><br><b>Chain-of-custody note and dead-end follow-ups</b><br><sub>log2timeline hash trip logged as chain-of-custody note after individual evidence hashes verified intact; dead-end advisories executed autonomously — evtexport confirmed zero records in SecEvent.Evt across allocated and slack space</sub></td>
+</tr></table>
 
 `EvtxECmd` failed 3/3 on the legacy `.Evt` format — honest UNKNOWN. The agent then executed its own dead-end advisory: `evtexport -m all`. SecEvent.Evt returned zero records across allocated and slack-recovered space. SysEvent.Evt (141 events) and AppEvent.Evt (41 events) parsed fine with the same tool over the same date range.
 
-### Dead ends resolved and self-diagnosis
+The correlator fired RULE_SUSPECTED on `amcache_without_prefetch` (HIGH severity). The agent identified it as a false positive: Amcache is a Windows 8+ artifact — its absence on XP is expected behavior, not anti-forensics. The agent documented the specific registry key a human could run to verify, then moved on. Both Amcache and `PECmd.py` (absent from PATH after 3 retries) are correctly UNKNOWN: expected absence is still documented; the reasoning string records why.
 
-<table><tr>
-<td width="100%"><img src="docs/screenshots/dead-ends-resolved-and-self-diagnosis.jpeg" width="100%"><br><b>Dead ends resolved and integrity issue self-diagnosed</b><br><sub>Follow-up dead-ends resolved; mid-run hash mismatch diagnosed as server design issue rather than evidence tampering</sub></td>
-</tr></table>
-
-Mid-run, the integrity guardrail tripped: `hash_before != hash_after` on the case directory. The agent stopped and investigated before proceeding — exactly as instructed. Root cause: `server.py:190` passes `case_dir` as both the log2timeline source and the output destination, so `timeline.plaso` gets written inside the directory being hashed. The agent verified individual evidence file hashes intact, root-caused the mismatch to a server design issue rather than evidence tampering, and only then continued. The fix is in git history.
+Mid-run, the integrity guardrail tripped: `hash_before != hash_after` on the case directory. The agent stopped and investigated before proceeding. Root cause: `server.py:190` passes `case_dir` as both the log2timeline source and the output destination, so `timeline.plaso` gets written inside the directory being hashed. The agent verified individual evidence file hashes intact, root-caused the mismatch to a server design issue rather than evidence tampering, logged it as a chain-of-custody note, and only then continued. The fix is in git history.
 
 ---
 
@@ -79,7 +81,7 @@ This is CANDOR's thesis in one concrete example.
 
 SecEvent.Evt returned zero records across allocated and slack-recovered space. SysEvent.Evt (141 events) and AppEvent.Evt (41 events) parsed fine with the same tool over the same date range.
 
-The zero-record result was tagged **CONFIRMED** — the tool ran clean and the output was directly observable. "The security log was deliberately cleared" was tagged **INFERRED** — that conclusion requires cross-source interpretation. A zero-record Security log is consistent with clearing; it's also consistent with other explanations unless corroborated. The fact gets a green badge. The interpretation stays amber. A reader can re-run `evtexport` to verify the fact. The interpretation is explicitly flagged for human review.
+The zero-record result was tagged **CONFIRMED** — the tool ran clean and the output was directly observable, verified by `evtexport` across allocated and slack space. "The security log was deliberately cleared" was tagged **INFERRED** — that conclusion requires cross-source interpretation. A zero-record Security log is consistent with clearing; it's also consistent with other explanations unless corroborated. The fact gets a green badge. The interpretation stays amber. A reader can re-run `evtexport` to verify the fact. The interpretation is explicitly flagged for human review.
 
 This split only exists because the schema forces it. Without the classification ladder, both claims appear in the report at the same confidence level — which is the problem CANDOR was built to solve.
 
@@ -97,13 +99,13 @@ The MCP server sits on the trust boundary between the LLM and the host OS. The a
 
 ## The Four Confidence Classes
 
-**CONFIRMED** — the tool ran without errors and the finding is directly observable in the raw output. No interpretation. In this run: SID RID 1003 recorded by Service Control Manager starting the NPF driver at 15:34:01Z, observed directly in the System event log. SecEvent.Evt returning 0 records, verified by `evtexport` across allocated and slack space. 81 `.pf` files verified intact by hash.
+**CONFIRMED** — the tool ran without errors and the finding is directly observable in the raw output. No interpretation. In this run: the NetGroup Packet Filter Driver (WinPcap NPF) recorded starting at 2004-08-27T15:46:19Z, observed directly in the System event log via evtexport. SecEvent.Evt returning 0 records, verified by `evtexport` across allocated and slack space. CMD → PING → Telnet attack chain confirmed by MFT timestamps and `.pf` files for all three executables. 84 `.pf` records enumerated from the MFT (81 files present on disk), verified intact by composite hash.
 
-**INFERRED** — the output is valid but the conclusion requires connecting dots. In this run: "Security log was deliberately cleared." SecEvent.Evt had 0 records while SysEvent and AppEvent parsed fine with the same tool over the same period. That asymmetry points toward clearing — but pointing toward isn't direct observation, so the conclusion doesn't get a green badge.
+**INFERRED** — the output is valid but the conclusion requires connecting dots. In this run: "Security log was deliberately cleared." SecEvent.Evt had 0 records while SysEvent and AppEvent parsed fine with the same tool over the same period. That asymmetry points toward clearing — but pointing toward isn't direct observation, so the conclusion doesn't get a green badge. The three-phase attack narrative built on top of the confirmed execution chain is also INFERRED: corroborated observation and constructed causal chain are different epistemic categories, and that distinction is what the classification ladder enforces.
 
-**SUSPECTED** — partial output, warnings present, or findings contradict another source. In this run: EvtxECmd failed on the legacy `.Evt` format, but Plaso recovered partial event data from the same files through its EVT plugin. Successful extraction with incomplete coverage lands SUSPECTED — there's real data, but the gaps are documented.
+**SUSPECTED** — partial output, warnings present, or intent inferred from timing rather than directly observed. In this run: DEFRAG.EXE and DFRGNTFS.EXE executed 220ms apart immediately after the attack sequence — the timing and combination suggest deliberate anti-forensics, but the intent is inferred from sequencing, not directly observable. Partial Plaso extraction from the legacy `.Evt` format also lands here: real data recovered, but coverage gaps are documented.
 
-**UNKNOWN** — tool failed after 3 retries, or the evidence is absent. In this run: Amcache returned UNKNOWN — Amcache is a Windows 8+ artifact, legitimately absent on XP. Expected absence is still documented; the reasoning string records why. Also UNKNOWN: `PECmd.py` was absent from PATH after 3 retries. The agent substituted MFT `$SI` timestamps as execution proxies, noted the reduced precision, and verified the 81 `.pf` files intact by hash.
+**UNKNOWN** — tool failed after 3 retries, or the artifact is legitimately absent. In this run: Amcache returned UNKNOWN — Windows XP predates Amcache, which is a Windows 8+ artifact, so its absence is expected, not suspicious. `PECmd.py` was not found on the system after 3 retries. Both are correctly UNKNOWN: expected absence is still documented; the reasoning string records why. The agent substituted MFT `$SI` timestamps as execution proxies for the failed `PECmd.py`, noted the reduced precision, and confirmed 84 `.pf` records enumerated from the MFT (81 files present on disk), verified intact by composite hash.
 
 ---
 
@@ -117,7 +119,7 @@ Three implementations handle different evidence shapes:
 - **Directory** (`Windows/Prefetch/`): `_hash_directory()` iterates all `.pf` files in sorted order, hashes each, and combines them into a composite `filename:sha256` manifest.
 - **Entire case tree** (`log2timeline`): `_hash_directory()` with a recursive `**/*` glob and a 30-second timeout. Timeout → `hash_before`/`hash_after` are `None` with a note in the error field.
 
-Any modification produces a visible hash mismatch in the structured output — there's no path to tamper with evidence undetected. The live hash-trip during this investigation (described above) demonstrates that the guardrail fires on real runs, not just in tests.
+Any modification produces a visible hash mismatch in the structured output — there's no path to tamper with evidence undetected. The live hash-trip during this investigation (described above) demonstrates that the guardrail fires on real runs, not just in tests. The agent detected its own tool writing output into `case_dir`, verified individual evidence hashes unchanged, and logged it as a chain-of-custody note — the integrity-detection story in full.
 
 ---
 
@@ -170,8 +172,8 @@ Confidence classification is deterministic given the same finding inputs; the ag
 ### Installation
 
 ```bash
-git clone https://github.com/Aaditya-Nepal00/Candor-sift
-cd Candor-sift
+git clone https://github.com/Aaditya-Nepal00/CANDOR
+cd CANDOR
 pip install 'mcp[cli]'
 ```
 
