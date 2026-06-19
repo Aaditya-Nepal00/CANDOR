@@ -180,7 +180,7 @@ pip install 'mcp[cli]'
 Register the MCP server with an **absolute path** — a relative path silently breaks when Claude is launched from a different working directory:
 
 ```bash
-claude mcp add candor-sift -- python /absolute/path/to/Candor-sift/mcp_server/server.py
+claude mcp add candor-sift -- python /absolute/path/to/CANDOR/mcp_server/server.py
 claude mcp list
 ```
 
@@ -211,7 +211,7 @@ The standalone loop uses a hardcoded `memory.raw` filename and cycles through `.
 ## Project Structure
 
 ```
-Candor-sift/
+CANDOR/
 ├── agent/
 │   ├── CLAUDE.md          # System prompt — investigation sequence and rules (111 lines)
 │   ├── tagger.py          # Epistemic confidence classifier, keyword ladder (216 lines)
